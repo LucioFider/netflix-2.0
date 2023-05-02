@@ -13,7 +13,7 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main>
-        <h2 className="text-green-500">Netflix 2.0</h2>
+        <h2 className="text-red-500">Netflix 2.0</h2>
       </main>
     </>
   );
