@@ -11,6 +11,7 @@
   "dependencies": {
     "@chakra-ui/react": "^2.5.2",
     "@heroicons/react": "^2.0.16",
+    "@prisma/client": "^4.13.0",
     "@types/node": "18.15.5",
     "@types/react": "18.0.28",
     "@types/react-dom": "18.0.11",
@@ -21,6 +22,7 @@
     "formik": "^2.2.9",
     "framer-motion": "^10.8.5",
     "next": "13.2.4",
+    "next-auth": "^4.22.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "swr": "^2.1.1",
@@ -28,8 +30,10 @@
     "zustand": "^4.3.6"
   },
   "devDependencies": {
+    "@types/bcrypt": "^5.0.0",
     "autoprefixer": "^10.4.14",
     "postcss": "^8.4.21",
+    "prisma": "^4.13.0",
     "tailwindcss": "^3.2.7"
   }
 }
