@@ -1,74 +1,72 @@
-import Input from "@/components/input";
-import React, { useState, useCallback } from "react";
+import NextAuth, { AuthOptions } from "next-auth";
+import GithubProvider from "next-auth/providers/github";
+import GoogleProvider from "next-auth/providers/google";
+import Credentials from "next-auth/providers/credentials";
+import { PrismaAdapter } from "@next-auth/prisma-adapter";
+import { compare } from "bcrypt";
+import prismadb from "@/libs/prismadb";
 
-const Auth = () => {
-  const [email, setEmail] = useState(" ");
-  const [name, setName] = useState(" ");
-  const [password, setPassword] = useState("");
+export const authOptions: AuthOptions = {
+  providers: [
+    GithubProvider({
+      clientId: process.env.GITHUB_ID || "",
+      clientSecret: process.env.GITHUB_SECRET || "",
+    }),
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID || "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+    }),
+    Credentials({
+      id: "credentials",
+      name: "Credentials",
+      credentials: {
+        email: {
+          label: "Email",
+          type: "text",
+        },
+        password: {
+          label: "Password",
+          type: "passord",
+        },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error("Email and password required");
+        }
 
-  const [variant, setVariant] = useState("login");
+        const user = await prismadb.user.findUnique({
+          where: {
+            email: credentials.email,
+          },
+        });
 
-  const toggleVariant = useCallback(() => {
-    setVariant((currentVariant) =>
-      currentVariant === "login" ? "register" : "login"
-    );
-  }, []);
+        if (!user || !user.hashedPassword) {
+          throw new Error("Email does not exist");
+        }
 
-  return (
-    <div className="relative h-full w-full bg-[url('/images/hero.jpg')] bg-no-repeat bg-center bg-fixed bg-cover">
-      <div className="bg-black w-full h-full lg:bg-opacity-50">
-        <nav className="px-12 py-5">
-          <img src="/images/logo.png" alt="logo" className="h-12" />
-        </nav>
-        <div className="flex justify-center">
-          <div className="bg-black bg-opacity-70 px-16 py-16 self-center mt-2 lg:w-2/5 lg:max-w-md rounded-md w-full">
-            <h2 className="text-white text-4xl mb-8 font-semibold">
-              {variant === "login" ? "Sign in" : "Register"}
-            </h2>
-            <div className="flex flex-col gap-4">
-              {variant === "register" && (
-                <Input
-                  label="Username"
-                  onChange={(ev: any) => setName(ev.target.value)}
-                  id="name"
-                  value={name}
-                />
-              )}
-              <Input
-                label="Email"
-                onChange={(ev: any) => setEmail(ev.target.value)}
-                id="email"
-                type="email"
-                value={email}
-              />
-              <Input
-                label="Password"
-                onChange={(ev: any) => setPassword(ev.target.value)}
-                id="password"
-                type="password"
-                value={password}
-              />
-            </div>
+        const isCorrectPassword = await compare(
+          credentials.password,
+          user.hashedPassword
+        );
 
-            <button className="bg-red-600 py-3 text-white rounded-md mt-10 w-full">
-              {variant === "login" ? "Login" : "Sign up"}
-            </button>
-            <p className="text-neutral-500 mt-12">
-              {variant === "login"
-                ? " First time using Netflix?"
-                : "Already have an account?"}
-              <span
-                onClick={toggleVariant}
-                className="text-white ml-1 hover:underline cursor-pointer"
-              >
-                {variant === "login" ? " Create an account" : "Login"}
-              </span>
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+        if (!isCorrectPassword) {
+          throw new Error("Incorrect password");
+        }
+
+        return user;
+      },
+    }),
+  ],
+  pages: {
+    signIn: "/auth",
+  },
+  debug: process.env.NODE_ENV === "development",
+  adapter: PrismaAdapter(prismadb),
+  session: { strategy: "jwt" },
+  jwt: {
+    secret: process.env.NEXTAUTH_JWT_SECRET,
+  },
+  secret: process.env.NEXTAUTH_SECRET,
 };
 
-export default Auth;
+export default NextAuth(authOptions);
